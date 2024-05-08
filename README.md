@@ -1,4 +1,4 @@
-# cx4242-proj
+# FISL Application
 ### Overview
 The `cx4242_proj` is a versatile web application developed using a React frontend and a Python Flask backend. This project utilizes a robust set of libraries and dependencies to deliver powerful data processing and visualization capabilities, particularly focused on clustering and modeling risk in various domains.
 
