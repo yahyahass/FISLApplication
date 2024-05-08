@@ -1,4 +1,4 @@
-name: cx4242_proj
+name: FISLApplication
 channels:
   - conda-forge
   - anaconda
