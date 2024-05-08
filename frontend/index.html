@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=0.01" />
+    <title>Vite + React</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+
+    
+    <!-- <script type="text/javascript" src="../lib/d3.v5.min.js"></script> -->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    
+    <div id = "graph">
+    <script>
+    d3.json("http://127.0.0.1:8080/clusters").then(function(data)  {
+    
+    // Original data and cluster extraction
+    var originalData = data;
+    var clusterValues = data.map(d => d.Cluster);
+    var minCluster = Math.min(...clusterValues);
+    var maxCluster = Math.max(...clusterValues);
+    
+    // Dropdown selection for cluster values
+    var dropdown = d3.select("body").append("select")
+                        .attr("id", "cluster-select")
+                        .on("change", updateVisualization);
+    
+    // Populate dropdown with cluster values
+    for (var i = minCluster; i <= maxCluster; i++) {
+        dropdown.append("option")
+                .attr("value", i)
+                .text("Cluster " + i);
+    }
+    dropdown.append("option")
+        .attr("value", "all")
+        .text("All Clusters");
+
+
+    
+    var linksByCluster = {};
+    var nodes = {};
+    
+    // Group ticker nodes by cluster value
+    var tickerNodesByCluster = {};
+    data.forEach(function(d) {
+        if (!tickerNodesByCluster[d.Cluster]) {
+            tickerNodesByCluster[d.Cluster] = [];
+        }
+        var tickerNode = nodes[d.Ticker] || { name: d.Ticker, cluster: d.Cluster, size: d.node_size };
+        // Store all key-value pairs dynamically
+        Object.entries(d).forEach(([key, value]) => {
+            if (key !== 'Ticker' && key !== 'Cluster') {
+                tickerNode[key] = value;
+            }
+        });
+        nodes[d.Ticker] = tickerNode; // Update node data
+        tickerNodesByCluster[d.Cluster].push(tickerNode);
+        
+    });
+    console.log(nodes)
+    console.log(tickerNodesByCluster)
+    // Create links between ticker nodes within each cluster
+    Object.entries(tickerNodesByCluster).forEach(function([cluster, nodesInCluster]) {
+        linksByCluster[cluster] = [];
+        for (var i = 0; i < nodesInCluster.length - 1; i++) {
+            for (var j = i + 1; j < nodesInCluster.length; j++) {
+                linksByCluster[cluster].push({ source: nodesInCluster[i], target: nodesInCluster[j] });
+            }
+        }
+    });
+    
+    var width = 1920,
+        height = 1600;
+    
+    // Initialize SVG
+    var svg = d3.select("body").append("svg")
+                .attr("width", width)
+                .attr("height", height);
+    
+
+    
+    // Define the tick function
+    function tick() {
+        // Update link positions
+        link.attr("d", function(d) {
+            var dx = d.target.x - d.source.x;
+            var dy = d.target.y - d.source.y;
+            var dr = Math.sqrt(dx * dx + dy * dy);
+            return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+        });
+    
+        // Update node positions
+        node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+    }
+
+    var colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+
+
+    function updateForces(nodes, clusterProperty) {
+        var centers = calculateClusterCenters(nodes, clusterProperty);
+
+        var force = d3.forceSimulation(nodes)
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("charge", d3.forceManyBody().strength(-500))
+            .force("link", d3.forceLink().distance(100))
+            .force("x", d3.forceX().strength(0.8).x(d => centers[d[clusterProperty]].x))
+            .force("y", d3.forceY().strength(0.8).y(d => centers[d[clusterProperty]].y))
+            .force("collide", d3.forceCollide().radius(d => d.radius + 10))
+            .on("tick", tick);
+
+        return force;
+    }
+    function calculateClusterCenters(nodes, clusterProperty) {
+        var centers = {};
+        var clusterCounts = {};
+
+        nodes.forEach(node => {
+            var cluster = node[clusterProperty];
+            if (centers[cluster]) {
+                centers[cluster].x += node.x;
+                centers[cluster].y += node.y;
+                clusterCounts[cluster]++;
+            } else {
+                centers[cluster] = {x: node.x, y: node.y};
+                clusterCounts[cluster] = 1;
+            }
+        });
+
+        Object.keys(centers).forEach(cluster => {
+            centers[cluster].x /= clusterCounts[cluster];
+            centers[cluster].y /= clusterCounts[cluster];
+        });
+
+        return centers;
+    }
+
+
+    
+    // Define the updateVisualization function
+    function updateVisualization() {
+        var selectedValue = this.value;
+        var selectedNodes, selectedLinks;
+
+        if (selectedValue === "all") {
+            selectedNodes = Object.values(nodes); 
+            selectedLinks = Object.values(linksByCluster).flat(); // Flatten the array of links from each cluster
+            console.log("selected link : ", selectedLinks)
+        } else {
+            var selectedCluster = +selectedValue;
+            selectedNodes = tickerNodesByCluster[selectedCluster] || [];
+            selectedLinks = linksByCluster[selectedCluster] || [];
+            console.log("selected link : ", selectedLinks)
+        }
+
+        var sizeScale = d3.scaleLinear()
+            .domain([d3.min(selectedNodes, d => d.node_size), d3.max(selectedNodes, d => d.node_size)])
+            .range([5, 50]); // Adjust minimum and maximum sizes as needed
+
+
+            // Define the force simulation
+        var force = d3.forceSimulation()
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("charge", d3.forceManyBody().strength(-500))
+            .force("link", d3.forceLink().distance(100))
+            .force("collide", d3.forceCollide().radius(function(d) {
+                return d.radius + 10; 
+            }))
+            .on("tick", tick);
+
+
+        // Update force simulation with selected nodes and links
+        force.nodes(selectedNodes);
+        force.force("link").links(selectedLinks);
+
+        // // Restart the simulation
+        // force.alpha(1).restart();
+
+        if (selectedValue === "all") {
+            updateForces(selectedNodes, 'cluster');
+        }
+        force.alpha(1).restart();
+
+
+        // Update links
+        link = link.data(selectedLinks);
+        link.exit().remove();
+        link = link.enter().append("path").attr("class", "link").style("fill", "none").merge(link);
+
+        // Update nodes
+        node = node.data(selectedNodes, function(d) { return d.name; });
+        node.exit().remove();
+        node = node.enter().append("g").attr("class", "node").merge(node);
+
+        node.append("circle")
+            .attr("r", function(d) { return sizeScale(d.size); })
+            .attr("fill", function(d) { return colorScale(d.cluster); });
+
+        node.append("text")
+            .attr("x", 10)
+            .attr("y", -10)
+            .text(function(d) { return d.name; });
+
+        node.append("title").text(function(d) {
+            // Generate tooltip dynamically based on available data
+            var tooltipText = '';
+            Object.entries(d).forEach(([key, value]) => {
+                tooltipText += key + ": " + value + "\n";
+            });
+            return tooltipText;
+        });
+
+        // d3.selectAll("circle") 
+        //     .attr("fill", function(d) { return colorScale(d.Cluster); });
+    }
+
+
+
+
+    
+    // Initialize nodes and links
+    var link = svg.append("g").selectAll(".link");
+    var node = svg.append("g").selectAll(".node");
+    
+    // Initial visualization
+    updateVisualization();
+    }).catch(function(error) {
+      console.log(error);
+    });
+    
+    </script>
+    </div>
+  </body>
+</html>

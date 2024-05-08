@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4242 Project Visualization</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    /* Style for the label elements */
+    label {
+      margin-bottom: 10px; /* Add margin bottom for spacing */
+      display: block; /* Display as block element */
+    }
+
+    /* Style for the button */
+    #runAnalysisButton {
+      padding: 12px 24px; /* Add padding to increase button size */
+      font-size: 16px; /* Increase font size */
+      margin-top: 20px; /* Add margin to the top of the button */
+    }
+
+    /* Style for the features container */
+    #featuresContainer {
+      margin-bottom: 20px; /* Add margin to the bottom of the features container */
+    }
+
+    /* Style for the column names display */
+    #columnNamesDisplay {
+      margin-top: 20px; /* Add margin to the top */
+    }
+  </style>
+</head>
+<body>
+  <h1>4242 Project Visualization</h1> <!-- Main title -->
+
+  <div id="dropdown-container">
+    <label for="featureDropdown">Number of features in your analysis:</label>
+    <select id="featureDropdown">
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+      <option value="7">7</option>
+      <option value="8">8</option>
+    </select>
+  </div>
+
+  <div id="featuresContainer"></div>
+
+  <button id="runAnalysisButton">Run Analysis</button> <!-- Button for running analysis -->
+
+  <!-- Element to display column names -->
+  <div id="columnNamesDisplay"></div>
+
+  <script>
+    // Select the feature dropdown
+    const featureDropdown = d3.select("#featureDropdown");
+
+    // Select the container for features
+    const featuresContainer = d3.select("#featuresContainer");
+
+    // Array to store selected feature names
+    let column_names = [];
+
+    // Function to create dropdowns for features
+    function createFeatureDropdowns(numFeatures, columnNames) {
+      // Clear previous dropdowns
+      featuresContainer.html("");
+
+      // Create dropdowns for each feature
+      for (let i = 0; i < numFeatures; i++) {
+        const dropdownId = "featureDropdown_" + i;
+        const label = featuresContainer.append("label").attr("for", dropdownId).text("Feature " + (i + 1) + ": ");
+        const dropdown = featuresContainer.append("select").attr("id", dropdownId).classed("featureDropdown", true);
+        // Populate dropdown with column names
+        columnNames.forEach(column => {
+          dropdown.append("option").attr("value", column).text(column);
+        });
+        featuresContainer.append("br"); // Add line break for stacking vertically
+      }
+    }
+
+    // Function to fetch CSV and extract column names
+    function fetchCSVAndPopulateDropdowns(numFeatures) {
+      fetch('full_dataframe.csv')
+        .then(response => response.text())
+        .then(data => {
+          const lines = data.split('\n');
+          if (lines.length > 0) {
+            const columnNames = lines[0].trim().split(',');
+            createFeatureDropdowns(numFeatures, columnNames);
+            updateColumnNames(); // Update column names array
+            printColumnNames(); // Print column names underneath the button
+          } else {
+            console.error('CSV file is empty.');
+          }
+        })
+        .catch(error => console.error('Error fetching CSV:', error));
+    }
+
+    // Event listener for feature dropdown change
+    featureDropdown.on("change", function() {
+      const numFeatures = +this.value; // Get the selected number of features
+      fetchCSVAndPopulateDropdowns(numFeatures); // Fetch CSV and populate dropdowns
+    });
+
+    // Function to update column names array
+    function updateColumnNames() {
+      column_names = []; // Clear the array
+      // Loop through each dropdown to get selected options
+      for (let i = 0; i < +featureDropdown.property("value"); i++) {
+        const dropdownId = "featureDropdown_" + i;
+        const selectedOption = document.getElementById(dropdownId).value;
+        column_names.push(selectedOption); // Push selected option to array
+      }
+    }
+
+    // Function to print column names underneath the button
+  
+    function printColumnNames() {
+      const columnNamesDisplay = d3.select("#columnNamesDisplay");
+      columnNamesDisplay.html(""); // Clear previous display
+      columnNamesDisplay.append("p").text("Selected Features:");
+      const ul = columnNamesDisplay.append("ul");
+      ul.selectAll("li")
+        .data(column_names)
+        .enter()
+        .append("li")
+        .text(d => d);
+    }
+
+    // Initial creation of feature dropdowns based on the initial value
+    fetchCSVAndPopulateDropdowns(+featureDropdown.property("value"));
+  </script>
+</body>
+</html>

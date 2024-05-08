@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<head>
+<style>
+
+path.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
+/* Your CSS styles here */
+
+</style>
+<meta charset="utf-8">
+<title></title>
+</head>
+
+<body>
+<!-- <script type="text/javascript" src="../lib/d3.v5.min.js"></script> -->
+<script src="https://d3js.org/d3.v5.min.js"></script>
+
+<script>
+d3.fetch("http://127.0.0.1:8080/clusters").then(function(response) {
+
+// Original data and cluster extraction
+
+var originalData = response;
+var clusterValues = response.map(d => d.Cluster);
+var minCluster = Math.min(...clusterValues);
+var maxCluster = Math.max(...clusterValues);
+
+// Dropdown selection for cluster values
+var dropdown = d3.select("body").append("select")
+                    .attr("id", "cluster-select")
+                    .on("change", updateVisualization);
+
+// Populate dropdown with cluster values
+for (var i = minCluster; i <= maxCluster; i++) {
+    dropdown.append("option")
+            .attr("value", i)
+            .text("Cluster " + i);
+}
+
+var linksByCluster = {};
+var nodes = {};
+
+// Group ticker nodes by cluster value
+var tickerNodesByCluster = {};
+response.forEach(function(d) {
+    if (!tickerNodesByCluster[d.Cluster]) {
+        tickerNodesByCluster[d.Cluster] = [];
+    }
+    var tickerNode = nodes[d.Ticker] || { name: d.Ticker, cluster: d.Cluster, size: d.Average };
+    // Store all key-value pairs dynamically
+    Object.entries(d).forEach(([key, value]) => {
+        if (key !== 'Ticker' && key !== 'Cluster') {
+            tickerNode[key] = value;
+        }
+    });
+    nodes[d.Ticker] = tickerNode; // Update node data
+    tickerNodesByCluster[d.Cluster].push(tickerNode);
+    
+});
+console.log(nodes)
+console.log(tickerNodesByCluster)
+// Create links between ticker nodes within each cluster
+Object.entries(tickerNodesByCluster).forEach(function([cluster, nodesInCluster]) {
+    linksByCluster[cluster] = [];
+    for (var i = 0; i < nodesInCluster.length - 1; i++) {
+        for (var j = i + 1; j < nodesInCluster.length; j++) {
+            linksByCluster[cluster].push({ source: nodesInCluster[i], target: nodesInCluster[j] });
+        }
+    }
+});
+
+var width = 1200,
+    height = 700;
+
+// Initialize SVG
+var svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+// Define the force simulation
+var force = d3.forceSimulation()
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("charge", d3.forceManyBody().strength(-250))
+                .force("link", d3.forceLink().distance(100))
+                .on("tick", tick);
+
+
+var nodeSizeScale = d3.scaleLinear()
+    .domain([0, d3.max(data, function(d) { return +d.size; })])
+    .range([5, 20]);
+
+// Define the tick function
+function tick() {
+    // Update link positions
+    link.attr("d", function(d) {
+        var dx = d.target.x - d.source.x;
+        var dy = d.target.y - d.source.y;
+        var dr = Math.sqrt(dx * dx + dy * dy);
+        return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+    });
+
+    // Update node positions
+    node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+}
+
+// Define the updateVisualization function
+function updateVisualization() {
+
+    var selectedCluster = +this.value;
+    var selectedNodes = tickerNodesByCluster[selectedCluster] || [];
+    var selectedLinks = linksByCluster[selectedCluster] || [];
+
+    // Update force simulation with selected nodes and links
+    force.nodes(selectedNodes);
+    force.force("link").links(selectedLinks);
+
+    // Restart the simulation
+    force.alpha(1).restart();
+
+    // Update links
+    link = link.response(selectedLinks);
+    link.exit().remove();
+    link = link.enter().append("path").attr("class", "link").style("fill", "none").merge(link);
+
+    // Update nodes
+    node = node.response(selectedNodes, function(d) { return d.name; });
+    node.exit().remove();
+    node = node.enter().append("g").attr("class", "node").merge(node);
+    // node.append("circle").attr("r", 5).style("fill", "steelblue");
+    node.append("circle")
+          .attr("r", function(d) { return nodeSizeScale(d.size); })
+          .style("fill", "steelblue");
+    node.append("text").attr("x", 5).attr("y", -5).text(function(d) { return d.name; });
+    node.append("title").text(function(d) {
+        // Generate tooltip dynamically based on available data
+        var tooltipText = '';
+        Object.entries(d).forEach(([key, value]) => {
+            
+                tooltipText += key + ": " + value + "\n";
+            
+            
+        });
+        return tooltipText;
+    });
+}
+
+// Initialize nodes and links
+var link = svg.append("g").selectAll(".link");
+var node = svg.append("g").selectAll(".node");
+
+// Initial visualization
+window.onload = function(){updateVisualization();}
+}).catch(function(error) {
+  console.log(error);
+});
+
+</script>
+</body>
+</html>
+
