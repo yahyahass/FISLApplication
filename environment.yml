@@ -1,9 +1,8 @@
-name: FISLApplication
+name: FSILApplication
 channels:
   - conda-forge
   - anaconda
-  - defaults
-dependencies:
+  - defaultsSL
   - appdirs=1.4.4=pyhd3eb1b0_0
   - beautifulsoup4=4.12.2=py312hca03da5_0
   - blas=1.0=openblas
