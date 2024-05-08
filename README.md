@@ -1,6 +1,6 @@
 # FISL Application
 ### Overview
-The `cx4242_proj` is a versatile web application developed using a React frontend and a Python Flask backend. This project utilizes a robust set of libraries and dependencies to deliver powerful data processing and visualization capabilities, particularly focused on clustering and modeling risk in various domains.
+The `FISLApplication` is a versatile web application developed using a React frontend and a Python Flask backend. This project utilizes a robust set of libraries and dependencies to deliver powerful data processing and visualization capabilities, particularly focused on clustering and modeling risk in various domains.
 
 ### Environment Setup
 This project relies on a Conda environment for managing its dependencies to ensure compatibility and ease of setup. The environment includes essential libraries such as Flask for the backend API, Beautifulsoup4 for web scraping, NumPy and Pandas for data handling, and Matplotlib and Scikit-learn for data visualization and machine learning.
@@ -21,7 +21,7 @@ To install and activate this environment:
 3. Run the following commands:
    ```bash
    conda env create -f environment.yml
-   conda activate cx4242_proj
+   conda activate FISLApplication
    ```
 
 ### Running the Application
@@ -47,4 +47,4 @@ This tool is designed for users needing to perform risk analysis using clusterin
 ### Support
 For any issues or contributions, please refer to the project's GitHub issues page or submit a pull request.
 
-This README provides a concise introduction to setting up and getting started with the `cx4242_proj`. It lays the foundation for developers to engage with the project effectively.
+This README provides a concise introduction to setting up and getting started with the `FISLApplication`. It lays the foundation for developers to engage with the project effectively.
