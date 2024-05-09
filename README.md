@@ -1,3 +1,9 @@
+#FSIL Application LLM Inference:
+Please find the pdf of project report
+
+Link to google colab implementation: https://colab.research.google.com/drive/1XWBSsQwNtV5aNEOVTXQNJDP2_ZesD6WY?usp=sharing
+
+
 # FSIL Application Visualization set up guide
 ### Overview
 The `FSILApplication` is a versatile web application developed using a React frontend and a Python Flask backend. This project utilizes a robust set of libraries and dependencies to deliver powerful data processing and visualization capabilities, particularly focused on clustering and modeling risk in various domains.
@@ -41,10 +47,3 @@ In ./frontend/ folder, run $npm run dev
 
 direct local host link appears in terminal
 
-### Usage
-This tool is designed for users needing to perform risk analysis using clustering techniques. Users can input their data, select parameters for clustering, and visualize the results interactively through the web interface.
-
-### Support
-For any issues or contributions, please refer to the project's GitHub issues page or submit a pull request.
-
-This README provides a concise introduction to setting up and getting started with the `FSILApplication`. It lays the foundation for developers to engage with the project effectively.
