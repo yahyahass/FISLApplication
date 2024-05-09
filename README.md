@@ -1,5 +1,5 @@
 # FSIL Application LLM Inference:
-Please find the pdf of project report (please note this was finished on an old ubuntu library computer and my ipad, sorry for the inconvenience and thanks!)
+Please find the pdf of project report (please note this was finished on an old ubuntu library computer and my ipad due to my laptop breaking down, sorry for the inconvenience and thanks!)
 
 Link to google colab implementation: https://colab.research.google.com/drive/1XWBSsQwNtV5aNEOVTXQNJDP2_ZesD6WY?usp=sharing
 
